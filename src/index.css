@@ -7,6 +7,10 @@ ol, ul {
   padding-left: 30px;
 }
 
+.selected{
+  font-weight: bold;
+}
+
 .board-row:after {
   clear: both;
   content: "";
@@ -48,3 +52,5 @@ ol, ul {
 .game-info {
   margin-left: 20px;
 }
+
+
