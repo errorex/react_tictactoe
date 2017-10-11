@@ -2,22 +2,37 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
-function Square(props) {
-  return (
-    <button className="square" onClick={props.onClick}>
-      {props.value}
-    </button>
-  );
+function Square(props) {  
+    let classes = "square";
+
+    if(props.winnerSquare){
+      classes += " winner-square";
+    }
+
+    return (
+      <button className={classes} onClick={props.onClick}>
+        {props.value}
+      </button>
+    );  
 }
 
 class Row extends React.Component {
 
   renderSquare(row,col) {
+    let winnerSquare = false;
+
+    if(this.props.winnerLine !== null){
+      winnerSquare = this.props.winnerLine.some( current => {
+        return current[0] === row && current[1] === col;
+      });
+    }
+
     return (
       <Square
         key={col}
         value={this.props.squares[row][col]}
         onClick={() => this.props.onClick(row,col)}
+        winnerSquare={winnerSquare}
       />
     );
   }
@@ -53,10 +68,27 @@ class Board extends React.Component {
   render() {        
     return (
       <Row 
+        winnerLine={this.props.winnerLine}
         squares={this.props.squares}
         onClick={this.props.onClick}
         size={this.props.size}
       />
+    );
+  }
+}
+
+
+class ToggleMovesOrderButton extends React.Component{
+
+  render(){
+    let description = this.props.reversed ? "reversed order" : "normal order";
+    return(
+      <button 
+        className="toggle-button"
+        href="#"
+        onClick={this.props.onClick}>          
+        {description}
+      </button>
     );
   }
 }
@@ -76,7 +108,14 @@ class Game extends React.Component {
       }],
       stepNumber: 0,
       xIsNext: true,
+      movesOrderReversed: false,
     };
+  }
+
+  reverseMovesOrder(){
+    this.setState({
+      movesOrderReversed: !this.state.movesOrderReversed,      
+    });
   }
 
   handleClick(row,col) {        
@@ -106,13 +145,8 @@ class Game extends React.Component {
     });
   }
 
-  render() {
-    const history = this.state.history;
-    const current = history[this.state.stepNumber];
-    const winner = calculateWinner(current.squares);
-
-    let moves = history.map((step, move) => {
-      const desc = move ? 'go to move #' + move : 'go to start';
+  includeMove(move){
+    const desc = move ? 'go to move #' + move : 'go to start';
       return(
         <li key={move}>
           <button 
@@ -122,8 +156,26 @@ class Game extends React.Component {
             {desc}  
           </button>
         </li>
-      );
+     );
+  }
+
+  render() {
+    var history = this.state.history;
+    const current = history[this.state.stepNumber];
+    const winnerLine = calculateWinner(current.squares);
+    var winner = null;
+
+    if(winnerLine !== null){
+      winner = current.squares[winnerLine[0][0]][winnerLine[0][1]];      
+    }    
+
+    let moves = history.map((step, move) => {
+      return this.includeMove(move);
     });
+
+    if(this.state.movesOrderReversed){
+      moves.reverse();
+    }
 
     let status;
     if(winner){
@@ -136,15 +188,21 @@ class Game extends React.Component {
       <div className="game">
         <div className="game-board">
           <Board 
+            winnerLine={winnerLine}
             squares={current.squares}
             onClick={ (row,col) => {this.handleClick(row,col)}}
             size={3}
           />
         </div>
-        <div className="game-info">
+        <div className="game-info">          
           <div>{status}</div>
           <div>{this.state.stepNumber}</div>
-          <ol>{moves}</ol>
+          <p/>
+          <ToggleMovesOrderButton 
+            reversed = {this.state.movesOrderReversed}
+            onClick = {() => this.reverseMovesOrder()}
+          />
+          <ul>{moves}</ul>
         </div>
       </div>
     );
@@ -158,12 +216,6 @@ ReactDOM.render(
   document.getElementById('root')
 );
 
-
-/**
- *  |(0,0)(0,1)(0,2) 
- *  |(1,0)(1,1)(1,2) 
- *  |(2,0)(2,1)(2,2) 
- **/
 function calculateWinner(squares) {
 
   const lines = [
@@ -185,7 +237,7 @@ function calculateWinner(squares) {
     if (squares[row_a][col_a] && 
         squares[row_a][col_a] === squares[row_b][col_b] && 
         squares[row_a][col_a] === squares[row_c][col_c]) {
-      return squares[row_a][col_a];
+      return lines[i];
     }
   }
   return null;

@@ -5,6 +5,7 @@ body {
 
 ol, ul {
   padding-left: 30px;
+  list-style-type: none;
 }
 
 .selected{
@@ -53,4 +54,6 @@ ol, ul {
   margin-left: 20px;
 }
 
-
+.winner-square {
+  background-color: yellow;
+}
